@@ -37,9 +37,6 @@ export default function Auth() {
     <div className="page">
       <div className="container">
         <div className="auth-container">  
-          {/** Show a welcome message when a user is logged in */}
-          {/** This appears above the sign-up/login title as requested */}
-          {user && <div className="welcome-message">Welcome, {user.email}!</div>}
           <h1 className="page-title">
             {mode === "signup" ? "Sign Up" : "Login"}
           </h1>
