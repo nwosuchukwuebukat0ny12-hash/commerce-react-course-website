@@ -1,83 +1,60 @@
-/* eslint-disable react-refresh/only-export-components */
-import { createContext, useContext, useState } from "react";
+import { createContext, useState, useContext } from "react";
 
- const AuthContext = createContext(null);
+const AuthContext = createContext(null);
 
-export default function AuthProvider({ children }) { 
-    const [user, setUser] = useState(() => {
-        try {
-            return JSON.parse(localStorage.getItem("currentUser")) || null;
-        } catch {
-            return null;
-        }
-    });
+export default function AuthProvider({ children }) {
+  const [user, setUser] = useState(
+    localStorage.getItem("currentUserEmail")
+      ? { email: localStorage.getItem("currentUserEmail") }
+      : null
+  );
 
-    function signUp(email, password) {
-        // Simulate API call
-        try {
-            const existingUsers = JSON.parse(localStorage.getItem("users")) || [];
-            const userExists = existingUsers.some(u => u.email === email);
-            
-            if (userExists) {
-                return { success: false, error: "User already exists" };
-            }
-            
-            const newUser = { email, password };
-            existingUsers.push(newUser);
-            localStorage.setItem("users", JSON.stringify(existingUsers));
-            setUser(newUser);
-            try {
-                localStorage.setItem("currentUser", JSON.stringify(newUser));
-            } catch (error) {
-                console.warn("Failed to persist currentUser", error);
-            }
-            return { success: true };
-        } catch (error) {
-            console.warn("Sign up error", error);
-            return { success: false, error: "Sign up failed" };
-        }
+  function signUp(email, password) {
+    const users = JSON.parse(localStorage.getItem("users") || "[]");
+
+    if (users.find((u) => u.email === email)) {
+      return { success: false, error: "Email already exists" };
+    }
+    const newUser = { email, password };
+    users.push(newUser);
+    localStorage.setItem("users", JSON.stringify(users));
+    localStorage.setItem("currentUserEmail", email);
+
+    setUser({ email });
+
+    return { success: true };
+  }
+
+  function login(email, password) {
+    const users = JSON.parse(localStorage.getItem("users") || "[]");
+    const user = users.find(
+      (u) => u.email === email && u.password === password
+    );
+
+    if (!user) {
+      return { success: false, error: "Invalid email or password" };
     }
 
-    function login(email, password) {
-        // Simulate API call
-        try {
-            const users = JSON.parse(localStorage.getItem("users")) || [];
-            const foundUser = users.find(u => u.email === email && u.password === password);
-            
-            if (!foundUser) {
-                return { success: false, error: "Invalid email or password" };
-            }
-            
-            setUser(foundUser);
-            try {
-                localStorage.setItem("currentUser", JSON.stringify(foundUser));
-            } catch (error) {
-                console.warn("Failed to persist currentUser", error);
-            }
-            return { success: true };
-        } catch (error) {
-            console.warn("Login error", error);
-            return { success: false, error: "Login failed" };
-        }
-    }
+    localStorage.setItem("currentUserEmail", email);
+    setUser({ email });
 
-    function logout() {
-        setUser(null);
-        try {
-            localStorage.removeItem("currentUser");
-        } catch (error) {
-            console.warn("Failed to remove currentUser", error);
-        }
-    }
+    return { success: true };
+  }
 
-    return <AuthContext.Provider value={{ signUp, login, logout, user }}>{children}</AuthContext.Provider>
+  function logout() {
+    localStorage.removeItem("currentUserEmail");
+    setUser(null);
+  }
+
+  return (
+    <AuthContext.Provider value={{ signUp, user, logout, login }}>
+      {children}
+    </AuthContext.Provider>
+  );
 }
 
 export function useAuth() {
-    const context = useContext(AuthContext);
-    if (!context) {
-        throw new Error("useAuth must be used within AuthProvider");
-    }
-    return context;
-}
+  const context = useContext(AuthContext);
 
+  return context;
+}
